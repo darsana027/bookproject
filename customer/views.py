@@ -8,6 +8,7 @@ from django.urls import reverse_lazy
 from customer.models import Carts
 from customer.decorators import sign_in_required
 from django.utils.decorators import method_decorator
+from django.contrib import messages
 
 
 # Create your views here.
@@ -81,6 +82,7 @@ def add_to_carts(request,*args,**kwargs):
     cart=Carts(product=book,
                user=user)
     cart.save()
+    messages.success(request,"Item has been added to the cart")
     return redirect("custhome")
 @method_decorator(sign_in_required,name="dispatch")
 class ViewMycart(ListView):
@@ -88,7 +90,13 @@ class ViewMycart(ListView):
     template_name = "mycart.html"
     context_object_name = "carts"
     def get_queryset(self):
-        qs = Carts.objects.filter(user=self.request.user)
-        return qs
+        return Carts.objects.filter(user=self.request.user).exclude(status="ordercancelled").order_by("date")
+def remove_from_carts(request,*args,**kwargs):
+        cart=Carts.objects.get(id=kwargs["id"])
+        cart.status="ordercancelled"
+        cart.save()
+        messages.error(request,"Item has been removed from the cart")
+        return redirect("custhome")
+
 
 
